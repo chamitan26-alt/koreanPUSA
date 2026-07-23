@@ -4,141 +4,102 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>
-韓国語って面白い！シムさんと楽しく学ぶ韓国語オノマトペ
-</title>
+<title>🌸 シムさんと学ぶ 韓国語オノマトペクイズ</title>
 
-
-<link rel="stylesheet" href="style.css?v=21">
-<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
 
 </head>
+
 
 <body>
 
 
-<div class="container">
+<div id="quizApp">
 
 
-<h1>
-🌸 シムさんと学ぶ<br>
-  韓国語オノマトペクイズ
-</h1>
+  <!-- タイトル -->
 
+  <h1>
+    🌸 シムさんと学ぶ<br>
+    韓国語オノマトペクイズ
+  </h1>
 
-<div id="startArea">
 
-<p class="catchcopy">
-韓国語をもっと身近に♪<br>
-クイズ形式で楽しく覚えよう！
-</p>
+  <!-- シムさん -->
 
-<button id="startButton">
-10問チャレンジ開始
-</button>
+  <img src="shimsan.png" id="simImage" class="character">
 
-</div>
 
+  <!-- ホーム画面 -->
 
+  <div id="homeScreen">
 
 
+    <p class="subtitle">
 
+      韓国語をもっと身近に♪<br>
+      クイズ形式で楽しく覚えよう！
 
+    </p>
 
 
-<div id="quizArea" style="display:none;">
+    <button id="startButton">
 
-<button id="homeButton" class="homeButton">
-← 戻る
-</button>
+      クイズ開始
 
-<div id="score" class="score">
+    </button>
 
-現在の得点：0 / 10
 
-</div>
+  </div>
 
 
 
 
+  <!-- クイズ画面 -->
 
-<div id="question">
 
-問題を読み込み中…
+  <div id="quiz" style="display:none;">
 
-</div>
 
+    <h2 id="question">
 
+      問題読み込み中...
 
+    </h2>
 
 
 
-<!-- 発音ボタン -->
+    <div id="choices"></div>
 
-<button id="speakButton">
 
-🔊 発音を聞く
 
-</button>
+    <p id="score">
 
+      現在の得点：0 / 10
 
+    </p>
 
 
 
+    <button id="nextButton">
 
+      次へ
 
+    </button>
 
-<div id="choices">
 
-</div>
 
+    <button id="homeButton">
 
+      ← 戻る
 
+    </button>
 
 
 
-
-
-<div id="result">
-
-</div>
-
-
-
-
-
-
-
-
-<div id="explanation">
-
-</div>
-
-
-
-
-
-
-
-
-<div id="nextArea">
-
-
-<button id="nextButton" style="display:none;">
-
-次の問題へ
-
-</button>
-
-
-</div>
-
-
-
-
+  </div>
 
 
 
@@ -146,24 +107,9 @@
 
 
 
+<script src="script.js"></script>
 
-
-
-
-</div>
-
-
-
-
-
-
-<script src="script.js?v=21"></script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
-</script>
 
 </body>
+
 </html>
