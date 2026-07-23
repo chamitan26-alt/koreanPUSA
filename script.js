@@ -1,199 +1,151 @@
 let questions = [];
 let quizQuestions = [];
-let currentQuestion = 0;
+let currentIndex = 0;
 let score = 0;
-let answered = false;
-let currentKoreanWord = "";
+let loaded = false;
 
-const startButton = document.getElementById("startButton");
-const startArea = document.getElementById("startArea");
-const quizArea = document.getElementById("quizArea");
-
-const questionText = document.getElementById("question");
-const choicesArea = document.getElementById("choices");
-const resultText = document.getElementById("result");
-const explanationText = document.getElementById("explanation");
-
-const nextButton = document.getElementById("nextButton");
-const speakButton = document.getElementById("speakButton");
-const scoreText = document.getElementById("score");
+// HTML要素の取得
 const homeButton = document.getElementById("homeButton");
+const homeScreen = document.getElementById("homeScreen");
+const startButton = document.getElementById("startButton");
 
-// ======================
-// データ読み込み
-// ======================
-fetch("questions.json")
-    .then(response => response.json())
-    .then(data => {
-        questions = data;
-    })
-    .catch(error => {
-        console.error("読み込みエラー", error);
-    });
+const quiz = document.getElementById("quiz");
+const questionText = document.getElementById("question");
+const choicesBox = document.getElementById("choices");
+const scoreText = document.getElementById("score");
+const nextButton = document.getElementById("nextButton");
 
-// ======================
-// スタート
-// ======================
-startButton.onclick = function() {
-    startArea.style.display = "none";
-    quizArea.style.display = "block";
-    startQuiz();
-};
+// 1. 問題データ（questions.json）の読み込み
+fetch("./questions.json")
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("questions.jsonが見つかりません");
+    }
+    return response.json();
+  })
+  .then(data => {
+    questions = data;
+    loaded = true;
+  })
+  .catch(error => {
+    questionText.textContent = "問題データを読み込めません";
+    console.error(error);
+  });
 
-// ======================
-// クイズ開始
-// ======================
+// 2. クイズ開始ボタンの挙動
+startButton.addEventListener("click", () => {
+  if (!loaded) {
+    alert("問題を読み込み中です。少し待ってから再度お試しください。");
+    return;
+  }
+
+  homeScreen.style.display = "none";
+  quiz.style.display = "block";
+
+  startQuiz();
+});
+
+// 3. クイズ初期化処理
 function startQuiz() {
-    quizQuestions = [...questions]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 10);
+  // 10問題をランダム抽出
+  quizQuestions = [...questions]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 10);
 
-    currentQuestion = 0;
-    score = 0;
-    scoreText.innerHTML = "現在の得点：0 / 10";
-    showQuestion();
+  currentIndex = 0;
+  score = 0;
+
+  scoreText.textContent = "現在の得点：0 / 10";
+  showQuestion();
 }
 
-// ======================
-// 問題表示
-// ======================
+// 4. 問題表示処理
 function showQuestion() {
-    answered = false;
+  const currentQuestion = quizQuestions[currentIndex];
 
-    resultText.innerHTML = "";
-    resultText.style.display = "none";
+  // 問題文のセット
+ // 問題文のセット
+questionText.textContent = currentQuestion.question;
+choicesBox.innerHTML = "";
 
-    explanationText.innerHTML = "";
-    explanationText.style.display = "none";
+// 解答するまでは「次へ」ボタンを隠す
+nextButton.style.display = "none";
 
-    nextButton.style.display = "none";
-    choicesArea.innerHTML = "";
+// 選択肢をコピーしてシャッフル
+const shuffledChoices = [...currentQuestion.choices].sort(() => Math.random() - 0.5);
 
-    let q = quizQuestions[currentQuestion];
+// シャッフルした選択肢を表示
+shuffledChoices.forEach(choice => {
+    const button = document.createElement("button");
+    button.textContent = choice;
+    button.className = "choiceButton";
 
-    questionText.innerHTML = `${currentQuestion + 1}問目 / 10問<br><br>${q.question}`;
-    currentKoreanWord = q.question.split(" の意味")[0];
+    button.onclick = () => {
+      // 全ての選択肢ボタンを無効化（連打防止）
+      document.querySelectorAll("#choices button").forEach(btn => {
+        btn.disabled = true;
+      });
 
-    let validChoices = q.choices.filter(choice => choice && choice.trim() !== "");
-
-    if (!validChoices.includes(q.answer)) {
-        validChoices.push(q.answer);
-    }
-
-    let finalChoices = validChoices.slice(0, 4);
-    finalChoices.sort(() => Math.random() - 0.5);
-
-    finalChoices.forEach(choice => {
-        let button = document.createElement("button");
-        button.textContent = choice;
-        button.onclick = function() {
-            checkAnswer(choice, q);
-        };
-        choicesArea.appendChild(button);
-    });
-}
-
-// ======================
-// 発音
-// ======================
-speakButton.onclick = function() {
-    if (!currentKoreanWord) return;
-    
-    speechSynthesis.cancel();
-
-    const speech = new SpeechSynthesisUtterance();
-    speech.text = currentKoreanWord;
-    speech.lang = "ko-KR";
-    speech.rate = 0.8;
-    speechSynthesis.speak(speech);
-};
-
-// ======================
-// 答え確認（★シムさんの毎回のセリフを削除してシンプルに）
-// ======================
-function checkAnswer(choice, q) {
-    if (answered) return;
-    answered = true;
-
-    const buttons = document.querySelectorAll("#choices button");
-
-    buttons.forEach(button => {
-        button.disabled = true;
-        if (button.textContent === q.answer) {
-            button.classList.add("correct");
-        }
-        if (button.textContent === choice && choice !== q.answer) {
-            button.classList.add("wrong");
-        }
-    });
-
-    if (choice === q.answer) {
+      // 正誤判定
+      if (choice === currentQuestion.answer) {
         score++;
-        scoreText.innerHTML = `現在の得点：${score} / 10`;
-        resultText.innerHTML = "⭕ 正解！";
-    } else {
-        resultText.innerHTML = `❌ 不正解<br>正解：${q.answer}`;
-    }
+        scoreText.textContent = `現在の得点：${score} / 10`;
+        questionText.innerHTML = "⭕ 正解！<br><br>" + currentQuestion.question;
+      } else {
+        questionText.innerHTML = 
+          "❌ 不正解<br><br>" + 
+          "正解は「" + currentQuestion.answer + "」です";
+      }
 
-    explanationText.innerHTML = `📖 解説<br>${q.explanation || "解説なし"}`;
+      // 解説の表示
+      if (currentQuestion.explanation) {
+        const explanation = document.createElement("p");
+        explanation.className = "explanation";
+        explanation.innerHTML = "💡 <b>解説</b><br>" + currentQuestion.explanation;
+        choicesBox.appendChild(explanation);
+      }
 
-    resultText.style.display = "block";
-    explanationText.style.display = "block";
-    nextButton.style.display = "block";
+      // 回答後に「次へ」ボタンを表示
+      nextButton.style.display = "block";
+    };
+
+    choicesBox.appendChild(button);
+  });
 }
 
-// ======================
-// 次の問題、または終了画面（★最後にシムさんが一言！）
-// ======================
-nextButton.onclick = function() {
-    currentQuestion++;
+// 5. 「次へ」ボタンの挙動
+nextButton.onclick = () => {
+  currentIndex++;
 
-    if (currentQuestion < quizQuestions.length) {
-        showQuestion();
-    } else {
-        // クイズエリアをリライト（最後にシムさんからお疲れ様でしたの挨拶）
-        quizArea.innerHTML = `
-            <h2>🎉終了！</h2>
-            <p>得点：${score} / 10</p>
-            <p style="color: #4a5568; padding: 10px; font-weight: bold; font-size: 1.1em;">
-                🐶「수고하셨습니다! <br>
-                （スゴハショッスmニダ！お疲れ様でした！）」
-            </p>
-            <br>
-            <button id="retryButton">もう一度挑戦する</button>
-            <br><br>
-            <button id="resultHomeButton">トップへ戻る</button>
-        `;
-
-        document.getElementById("retryButton").onclick = () => location.reload();
-        document.getElementById("resultHomeButton").onclick = () => location.reload();
-    }
+  if (currentIndex < quizQuestions.length) {
+    showQuestion();
+  } else {
+    // クイズ終了画面の処理
+    questionText.innerHTML = "🎉 クイズ終了！";
+    document.getElementById("simImage").src = "shimsan2.png";
+    choicesBox.innerHTML = `
+      <p style="font-size: 1.2rem; font-weight: bold; line-height: 1.6;">
+        あなたの最終得点は<br>
+        <span style="font-size: 1.8rem; color: #ff6b81;">${score} / 10点</span> です！
+      </p>
+    `;
+    scoreText.style.display = "none";
+    nextButton.style.display = "none";
+  }
 };
 
-// ======================
-// 途中で戻る
-// ======================
-homeButton.onclick = function() {
-    const result = confirm("クイズを終了してトップ画面に戻りますか？");
+// 6. 「← 戻る」ボタンの挙動
+homeButton.addEventListener("click", () => {
 
-    if (result) {
-        quizArea.style.display = "none";
-        startArea.style.display = "block";
-        
-        currentQuestion = 0;
-        score = 0;
-        answered = false;
-        currentKoreanWord = "";
+  // シムさんを元に戻す
+  document.getElementById("simImage").src = "shimsan.png";
 
-        questionText.innerHTML = "";
-        choicesArea.innerHTML = "";
-        
-        resultText.innerHTML = "";
-        resultText.style.display = "none";
+  quiz.style.display = "none";
+  homeScreen.style.display = "block";
 
-        explanationText.innerHTML = "";
-        explanationText.style.display = "none";
-
-        nextButton.style.display = "none";
-    }
-};
+  // 状態のリセット
+  currentIndex = 0;
+  score = 0;
+  scoreText.textContent = "現在の得点：0 / 10";
+  scoreText.style.display = "block";
+});
